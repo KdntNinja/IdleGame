@@ -114,13 +114,22 @@ class ClickerGame:
                 hover_effect=True,
                 tooltip=f"Increase passive income speed, current: {self.state.speed_upgrade_value:.2f}",
             )
-            self.ui_manager.draw_progress_bar(
-                (self.settings.width // 2 - 150, self.settings.height - 300),
-                (300, 30),
-                self.state.passive_income_accumulator,
-                color=(0, 255, 0),
-                outline_color=(255, 255, 255),
-            )
+            if self.state.passive_income["passive_income"] > 0:
+                progress_bar_rect = pygame.Rect(
+                    self.settings.width // 2 - 150, self.settings.height - 300, 300, 30
+                )
+
+                self.ui_manager.draw_progress_bar(
+                    (self.settings.width // 2 - 150, self.settings.height - 300),
+                    (300, 30),
+                    self.state.passive_income_accumulator,
+                    color=(0, 255, 0),
+                    outline_color=(255, 255, 255),
+                )
+                if progress_bar_rect.collidepoint(mouse_pos):
+                    self.ui_manager.draw_tooltip(
+                        color=(255, 255, 255)  # Ensure valid RGB color tuple
+                    )
             self.ui_manager.render()
             pygame.display.flip()
             self.clock.tick(60)

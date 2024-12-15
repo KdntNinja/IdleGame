@@ -42,12 +42,10 @@ class GameState:
         try:
             with open(self.save_file, "w") as f:
                 json.dump(state, f, indent=4)
-                print(f"[Info] Game state saved successfully to {self.save_file}")
         except Exception as e:
             print(f"[Error] Failed to save game state to {self.save_file}: {e}")
 
     def increment_speed_upgrade_value(self, increment=1):
         """ Increment the speed upgrade value and save the state. """
         self.speed_upgrade_value += increment
-        print(f"[Debug] speed_upgrade_value updated to {self.speed_upgrade_value}")
         self.save_game_state()
