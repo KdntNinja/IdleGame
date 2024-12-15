@@ -23,12 +23,6 @@ class App:
         self.running = True
         self.clock = pygame.time.Clock()
 
-        # Access other settings like audio, controls, etc., if needed
-        self.audio_settings = game_settings.get("audio", {})
-        self.controls = game_settings.get("controls", {})
-        self.player_profile = settings.get("player_profile", {})
-        self.save_slots = settings.get("save_slots", [])
-
     def display_text(self, message, size, position=(10, 10), color=(255, 255, 255)):
         font = pygame.font.SysFont("Arial", size)
         text = font.render(message, True, color)
