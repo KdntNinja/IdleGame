@@ -21,6 +21,7 @@ class App:
         self.screen = pygame.display.set_mode((width, height), flags)
         self.background_color = tuple(game_settings.get("background_color", [0, 0, 0]))
         self.running = True
+        self.clock = pygame.time.Clock()
 
         # Access other settings like audio, controls, etc., if needed
         self.audio_settings = game_settings.get("audio", {})
@@ -28,13 +29,26 @@ class App:
         self.player_profile = settings.get("player_profile", {})
         self.save_slots = settings.get("save_slots", [])
 
+    def display_text(self, message, size, position=(10, 10), color=(255, 255, 255)):
+        font = pygame.font.SysFont("Arial", size)
+        text = font.render(message, True, color)
+        self.screen.blit(text, position)
+
+    def show_fps(self):
+        fps = int(self.clock.get_fps())
+        self.display_text(str(fps), 10, position=(10, 10))
+
     def game_loop(self):
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+
             self.screen.fill(self.background_color)
+            self.show_fps()
+
             pygame.display.flip()
+            self.clock.tick(60)
 
         pygame.quit()
 
