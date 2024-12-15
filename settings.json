@@ -1,0 +1,44 @@
+{
+  "game_settings": {
+    "resolution": {
+      "width": 1080,
+      "height": 720
+    },
+    "fullscreen": false,
+    "audio": {
+      "master_volume": 0.8,
+      "music_volume": 0.6,
+      "effects_volume": 0.7
+    },
+    "controls": {
+      "move_up": "W",
+      "move_down": "S",
+      "move_left": "A",
+      "move_right": "D",
+      "action": "Space",
+      "pause": "Escape"
+    }
+  },
+  "player_profile": {
+    "username": "Player1",
+    "language": "en",
+    "color_theme": "dark"
+  },
+  "save_slots": [
+    {
+      "slot_id": 1,
+      "saved_at": null,
+      "progress": 0
+    },
+    {
+      "slot_id": 2,
+      "saved_at": null,
+      "progress": 0
+    },
+    {
+      "slot_id": 3,
+      "saved_at": null,
+      "progress": 0
+    }
+  ]
+}
