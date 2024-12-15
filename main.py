@@ -1,171 +1,118 @@
-import json
 import pygame
+from settings import GameSettings
+from state import GameState
+from ui_manager import UIManager
 
 
-class App:
-    def __init__(self, config_file="settings.json", save_file="save.json"):
-        # Load configuration and save files
-        self.config_file = config_file
-        self.save_file = save_file
-        self.settings = self.load_json_file(config_file, default={})
-        self.game_state = self.load_json_file(
-            save_file,
-            default={
-                "score": 0,
-                "passive_income": {"income_per_second": 0, "upgrade_cost": 10},
-                "click_power": {"value": 1, "upgrade_cost": 20},
-            },
-        )
+class ClickerGame:
+    def __init__(self):
+        self.settings = GameSettings()
+        self.state = GameState()
 
-        # Initialize Pygame
         pygame.init()
-
-        # Game settings
-        self.apply_loaded_settings()
-
-        # Application state
-        self.running = True
+        self.screen = pygame.display.set_mode(
+            (self.settings.width, self.settings.height),
+            self.settings.get_display_flags(),
+        )
+        pygame.display.set_caption("Simple Clicker Game")
         self.clock = pygame.time.Clock()
-        self.score = self.game_state.get("score", 0)
-        self.passive_income = self.game_state.get("passive_income", {"income_per_second": 0, "upgrade_cost": 10})
-        self.click_power = self.game_state.get("click_power", {"value": 1, "upgrade_cost": 20})
-        self.passive_income_accumulator = 0  # For fractional income tracking
+        self.running = True
 
-    def load_json_file(self, file_path, default):
-        try:
-            with open(file_path, "r") as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return default
+        self.ui_manager = UIManager(self.settings, self.state, self.screen)
 
-    def apply_loaded_settings(self):
-        # Extract and apply settings to the game
-        game_settings = self.settings.get("game_settings", {})
-        self.resolution = game_settings.get("resolution", {"width": 800, "height": 600})
-        self.width = self.resolution.get("width")
-        self.height = self.resolution.get("height")
-        self.fullscreen = game_settings.get("fullscreen", False)
-        self.flags = pygame.FULLSCREEN if self.fullscreen else 0
-        pygame.display.set_caption(self.settings.get("title", "Simple Clicker Game"))
-        self.screen = pygame.display.set_mode((self.width, self.height), self.flags)
-        self.background_color = tuple(game_settings.get("background_color", [0, 0, 0]))
-        self.button_color = tuple(game_settings.get("button_color", [255, 0, 0]))
-        self.button_hover_color = tuple(game_settings.get("button_hover_color", [200, 0, 0]))
-        self.button_rect = pygame.Rect(self.width // 2 - 50, self.height // 2 - 25, 100, 50)
-
-    def display_text(self, message, size, position=(10, 10), color=(255, 255, 255)):
-        font = pygame.font.SysFont(self.settings.get("game_settings", {}).get("font", "Arial"), size)
-        text = font.render(message, True, color)
-        self.screen.blit(text, position)
-
-    def show_fps(self):
-        fps = round(self.clock.get_fps(), 2)
-        self.display_text(str(fps), 15, position=(10, 10), color=self.button_color)
-
-    def draw_button(self, text):
-        mouse_pos = pygame.mouse.get_pos()
-        mouse_click = pygame.mouse.get_pressed()
-
-        if self.button_rect.collidepoint(mouse_pos) and mouse_click[0] and not getattr(self, "mouse_clicked", False):
-            self.score += self.click_power["value"]
-            self.mouse_clicked = True
-            if self.score % 10 == 0:  # Autosave every 10 clicks
-                self.save_game()
-        if not mouse_click[0]:
-            self.mouse_clicked = False
-
-        button_color = self.button_hover_color if self.button_rect.collidepoint(mouse_pos) else self.button_color
-        pygame.draw.rect(self.screen, button_color, self.button_rect)
-
-        font = pygame.font.SysFont(self.settings.get("game_settings", {}).get("font", "Arial"), 20)
-        text_surface = font.render(text, True, (255, 255, 255))
-        text_rect = text_surface.get_rect(center=self.button_rect.center)
-        self.screen.blit(text_surface, text_rect)
-
-    def draw_upgrade_click_power_button(self):
-        button_rect = pygame.Rect(self.width // 2 - 100, self.height - 170, 200, 50)
-        mouse_pos = pygame.mouse.get_pos()
-        mouse_click = pygame.mouse.get_pressed()
-
-        if button_rect.collidepoint(mouse_pos) and mouse_click[0]:
-            if self.score >= self.click_power["upgrade_cost"]:
-                self.score -= self.click_power["upgrade_cost"]
-                self.click_power["value"] += 1
-                self.click_power["upgrade_cost"] = int(self.click_power["upgrade_cost"] * 1.5)
-                self.save_game()  # Autosave on upgrade
-
-        button_color = (100, 100, 0) if not button_rect.collidepoint(mouse_pos) else (150, 150, 0)
-        pygame.draw.rect(self.screen, button_color, button_rect)
-
-        font = pygame.font.SysFont(self.settings.get("game_settings", {}).get("font", "Arial"), 20)
-        text_surface = font.render(
-            f"Upgrade Click ({self.click_power['upgrade_cost']})", True, (255, 255, 255)
+        self.click_button_rect = pygame.Rect(
+            self.settings.width // 2 - 50, self.settings.height // 2 - 25, 100, 50
         )
-        text_rect = text_surface.get_rect(center=button_rect.center)
-        self.screen.blit(text_surface, text_rect)
-
-    def draw_passive_income_button(self):
-        button_rect = pygame.Rect(self.width // 2 - 100, self.height - 100, 200, 50)
-        mouse_pos = pygame.mouse.get_pos()
-        mouse_click = pygame.mouse.get_pressed()
-
-        if button_rect.collidepoint(mouse_pos) and mouse_click[0]:
-            if self.score >= self.passive_income["upgrade_cost"]:
-                self.score -= self.passive_income["upgrade_cost"]
-                self.passive_income["income_per_second"] += 1
-                self.passive_income["upgrade_cost"] = int(self.passive_income["upgrade_cost"] * 1.5)
-                self.save_game()  # Autosave on upgrade
-
-        button_color = (0, 100, 0) if not button_rect.collidepoint(mouse_pos) else (0, 150, 0)
-        pygame.draw.rect(self.screen, button_color, button_rect)
-
-        font = pygame.font.SysFont(self.settings.get("game_settings", {}).get("font", "Arial"), 20)
-        text_surface = font.render(
-            f"Upgrade Income ({self.passive_income['upgrade_cost']})", True, (255, 255, 255)
+        self.upgrade_click_rect = pygame.Rect(
+            self.settings.width // 2 - 100, self.settings.height - 170, 200, 50
         )
-        text_rect = text_surface.get_rect(center=button_rect.center)
-        self.screen.blit(text_surface, text_rect)
+        self.upgrade_income_rect = pygame.Rect(
+            self.settings.width // 2 - 100, self.settings.height - 100, 200, 50
+        )
+
+        self.click_button_colors = ((100, 149, 237), (70, 130, 180))  # Blue shades
+        self.upgrade_click_colors = ((34, 139, 34), (50, 205, 50))  # Green shades
+        self.upgrade_income_colors = ((255, 140, 0), (255, 165, 0))  # Orange shades
+
+        self.mouse_clicked = False
 
     def apply_passive_income(self):
-        self.passive_income_accumulator += self.passive_income["income_per_second"] / 60
-        while self.passive_income_accumulator >= 1:
-            self.score += 1
-            self.passive_income_accumulator -= 1
+        self.state.passive_income_accumulator += (
+            self.state.passive_income["income_per_second"] / 60
+        )
+        while self.state.passive_income_accumulator >= 1:
+            self.state.score += 1
+            self.state.passive_income_accumulator -= 1
 
-    def save_game(self):
-        self.game_state = {
-            "score": self.score,
-            "passive_income": self.passive_income,
-            "click_power": self.click_power,
-        }
-        with open(self.save_file, "w") as f:
-            json.dump(self.game_state, f)
+    def handle_events(self):
+        self.mouse_clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or (
+                event.type == pygame.KEYDOWN and event.key == self.settings.exit_key
+            ):
+                self.running = False
+                self.state.save_game_state()
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                self.mouse_clicked = True
 
     def game_loop(self):
         while self.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT or (
-                        event.type == pygame.KEYDOWN and event.key == self.settings.get("exit_key", pygame.K_ESCAPE)
-                ):
-                    self.running = False
-                    self.save_game()  # Autosave on quit
-
-            self.screen.fill(self.background_color)
-
+            self.handle_events()
             self.apply_passive_income()
-            self.show_fps()
-            self.draw_button("Click")
-            self.draw_passive_income_button()
-            self.draw_upgrade_click_power_button()
-            self.display_text(f"Score: {int(self.score)}", 30, position=(self.width // 2 - 50, 10), color=(255, 255, 255))
-            self.display_text(f"Click Power: {self.click_power['value']}", 20, position=(10, 40), color=(255, 255, 255))
 
+            mouse_pos = pygame.mouse.get_pos()
+            self.screen.fill(self.settings.background_color)
+
+            self.ui_manager.draw_button(
+                self.click_button_rect,
+                "Click",
+                mouse_pos,
+                self.mouse_clicked,
+                self.on_click,
+                *self.click_button_colors,
+            )
+            self.ui_manager.draw_button(
+                self.upgrade_click_rect,
+                f"Upgrade Click ({self.state.click_power['upgrade_cost']})",
+                mouse_pos,
+                self.mouse_clicked,
+                self.upgrade_click_power,
+                *self.upgrade_click_colors,
+            )
+            self.ui_manager.draw_button(
+                self.upgrade_income_rect,
+                f"Upgrade Income ({self.state.passive_income['upgrade_cost']})",
+                mouse_pos,
+                self.mouse_clicked,
+                self.upgrade_income,
+                *self.upgrade_income_colors,
+            )
+            self.ui_manager.render()
             pygame.display.flip()
             self.clock.tick(60)
 
         pygame.quit()
 
+    def on_click(self):
+        self.state.score += self.state.click_power["value"]
+
+    def upgrade_click_power(self):
+        if self.state.score >= self.state.click_power["upgrade_cost"]:
+            self.state.score -= self.state.click_power["upgrade_cost"]
+            self.state.click_power["value"] += 1
+            self.state.click_power["upgrade_cost"] = int(
+                self.state.click_power["upgrade_cost"] * 1.5
+            )
+
+    def upgrade_income(self):
+        if self.state.score >= self.state.passive_income["upgrade_cost"]:
+            self.state.score -= self.state.passive_income["upgrade_cost"]
+            self.state.passive_income["income_per_second"] += 1
+            self.state.passive_income["upgrade_cost"] = int(
+                self.state.passive_income["upgrade_cost"] * 1.5
+            )
+
 
 if __name__ == "__main__":
-    app = App()
-    app.game_loop()
+    game = ClickerGame()
+    game.game_loop()

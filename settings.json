@@ -1,12 +1,11 @@
 {
+  "resolution": {
+    "width": 800,
+    "height": 600
+  },
+  "title": "Simple Clicker Game",
   "game_settings": {
-    "resolution": {
-      "width": 1080,
-      "height": 720
-    },
     "fullscreen": false,
-    "controls": {
-      "quit": "Escape"
-    }
+    "background_color": [0, 0, 0]
   }
 }
