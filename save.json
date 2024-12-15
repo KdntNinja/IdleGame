@@ -1,1 +1,13 @@
-{"score": 263.0, "passive_income": {"income_per_second": 10, "upgrade_cost": 549}, "click_power": {"value": 10, "upgrade_cost": 757}}
+{
+    "score": 231,
+    "passive_income": {
+        "passive_income": 8,
+        "upgrade_cost": 244
+    },
+    "click_power": {
+        "value": 9,
+        "upgrade_cost": 244
+    },
+    "speed_upgrade_cost": 225,
+    "speed_upgrade_value": 10
+}

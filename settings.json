@@ -4,9 +4,10 @@
       "width": 1080,
       "height": 720
     },
-    "fullscreen": false,
+    "fullscreen": true,
     "controls": {
       "quit": "Escape"
-    }
+    },
+    "default_point_speed": 50
   }
 }
